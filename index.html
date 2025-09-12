@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Drone Pre-Flight Environmental Analysis System</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@800&family=Poppins:wght@400;600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --brand-blue: #1565c0;
+    --brand-green: #22bb5b;
+    --brand-red: #ea4335;
+    --brand-white: #fff;
+    --brand-bg: #f5faff;
+    --brand-dark: #212a3e;
+    --card-radius: 16px;
+    --shadow-1: 0 6px 26px rgba(21,101,192,0.15);
+    --logo-font: 'Montserrat', Arial, sans-serif;
+    --main-font: 'Poppins', Arial, sans-serif;
+    --glow-green: 0 0 16px 4px #22bb5b88;
+    --glow-red: 0 0 18px 5px #ea433588;
+    --trans-fast: 0.22s cubic-bezier(.19,1,.22,1);
+    --trans-medium: 0.42s cubic-bezier(.08,.9,.28,1.0);
+  }
+  html, body {
+    margin: 0; padding: 0; height: 100%;
+    font-family: var(--main-font);
+    background: var(--brand-bg);
+    color: var(--brand-dark);
+  }
+  #app {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+  }
+  header {
+    width: 100%;
+    background: linear-gradient(90deg,#1565c0 0%,#1abc9c 100%);
+    padding: 28px 0 16px 0;
+    text-align:center;
+    box-shadow: var(--shadow-1);
+    flex-shrink: 0;
+  }
+  .logo-title {
+    font-family: var(--logo-font);
+    font-size: 3.1rem;
+    font-weight: 900;
+    letter-spacing: 2.8px;
+    background: linear-gradient(90deg,#22bb5b 20%,#1565c0 90%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin: 0;
+  }
+  .subtitle {
+    font-size: 1.16rem;
+    font-weight: 600;
+    color: #e3f2fd;
+    margin-top: 6px;
+    letter-spacing: 1px;
+  }
+  main {
+    flex-grow: 1;
+    width: 100vw;
+    max-width: 900px;
+    display: flex;
+    justify-content: center;
+    padding: 20px 14px 32px;
+    box-sizing: border-box;
+    position: relative;
+    min-height: 520px;
+  }
+  section {
+    width: 100%;
+    max-width: 760px;
+    background: var(--brand-white);
+    border-radius: var(--card-radius);
+    box-shadow: var(--shadow-1);
+    padding: 40px 28px 38px;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    position: absolute;
+    top: 85px;
+    left: 50%;
+    transform: translateX(-50%);
+    opacity: 0;
+    transition: opacity var(--trans-medium);
+    z-index: 1;
+    min-height: 420px;
+  }
+  section.active {
+    display: flex;
+    opacity: 1;
+    position: relative;
+    z-index: 2;
+  }
+  .welcome-text {
+    text-align: center;
+    max-width: 520px;
+    margin-bottom: 30px;
+    font-size: 1.18rem;
+    color: var(--brand-dark);
+    line-height: 1.5;
+  }
+  button, .btn {
+    background: linear-gradient(90deg,var(--brand-blue) 65%,var(--brand-green) 100%);
+    color: white;
+    font-size: 1.1rem;
+    font-weight: 600;
+    padding: 14px 46px;
+    border: none;
+    border-radius: 11px;
+    cursor: pointer;
+    letter-spacing: 0.75px;
+    transition: background var(--trans-fast), box-shadow var(--trans-fast), transform var(--trans-fast);
+    box-shadow: 0 3px 14px rgba(21,101,192,0.11);
+    user-select: none;
+    margin: 8px 0 0 0;
+  }
+  button:hover, .btn:hover {
+    background: linear-gradient(90deg,var(--brand-blue) 43%,var(--brand-green) 100%);
+    box-shadow: 0 14px 30px rgba(21,101,192,0.16);
+    transform: translateY(-2px) scale(1.08);
+  }
+  button:focus, .btn:focus {
+    outline-offset: 3px;
+    outline: 2px solid var(--brand-green);
+  }
+  input[type=text].input-box {
+    font-size: 1rem;
+    padding: 14px 18px;
+    border-radius: 8px;
+    border: 2px solid var(--brand-blue);
+    width: 280px;
+    max-width: 100%;
+    transition: border-color var(--trans-fast), box-shadow var(--trans-fast);
+    font-family: var(--main-font);
+    margin-right: 12px;
+    outline-offset: 3px;
+  }
+  input[type=text].input-box:focus {
+    border-color: var(--brand-green);
+    box-shadow: 0 0 12px #22bb5baa;
+    outline: none;
+  }
+  .controls {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-bottom: 24px;
+  }
+  #map {
+    width: 100%;
+    height: 330px;
+    border-radius: var(--card-radius);
+    box-shadow: var(--shadow-1);
+    margin-bottom: 20px;
+  }
+  .status-card {
+    width: 100%;
+    max-width: 420px;
+    background: #fff;
+    border-radius: var(--card-radius);
+    box-shadow: var(--shadow-1);
+    padding: 24px 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.32rem;
+    font-weight: 700;
+    letter-spacing: 1.2px;
+    color: var(--brand-green);
+    transition: background var(--trans-medium), box-shadow var(--trans-medium), color var(--trans-fast);
+    position: relative;
+    margin-bottom: 20px;
+  }
+  .status-card.good {
+    background: linear-gradient(90deg, #e9ffe4 60%, #c7fad8 100%);
+    box-shadow: 0 12px 28px rgba(34,187,91,0.14), var(--glow-green);
+  }
+  .status-card.bad {
+    color: var(--brand-red);
+    background: linear-gradient(90deg,#ffe5e3 60%,#fad2d2 100%);
+    box-shadow: 0 12px 28px rgba(234,67,53,0.14), var(--glow-red);
+  }
+  .status-dot {
+    height: 22px;
+    width: 22px;
+    border-radius: 50%;
+    margin-right: 12px;
+    box-shadow: 0 0 8px 2px var(--brand-green);
+    background: var(--brand-green);
+    animation: pulseDotG 1.3s infinite;
+  }
+  .status-card.bad .status-dot {
+    background: var(--brand-red);
+    box-shadow: 0 0 10px 3px var(--brand-red);
+    animation: pulseDotR 1.3s infinite;
+  }
+  @keyframes pulseDotG {
+    0% {box-shadow: 0 0 8px 2px var(--brand-green);}
+    70% {box-shadow: 0 0 16px 6px var(--brand-green);}
+    100% {box-shadow: 0 0 8px 2px var(--brand-green);}
+  }
+  @keyframes pulseDotR {
+    0% {box-shadow: 0 0 8px 2px var(--brand-red);}
+    70% {box-shadow: 0 0 18px 7px var(--brand-red);}
+    100% {box-shadow: 0 0 8px 2px var(--brand-red);}
+  }
+  .results-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 18px;
+    font-weight: 600;
+  }
+  .result-card {
+    background: var(--brand-bg);
+    border-radius: 14px;
+    box-shadow: 0 3px 16px 0 rgba(21,101,192,0.12);
+    padding: 20px 10px;
+    text-align: center;
+    color: var(--brand-dark);
+    font-size: 1.11rem;
+    user-select: none;
+  }
+  .result-label {
+    font-weight: 600;
+    margin-bottom: 4px;
+    color: var(--brand-blue);
+  }
+  .btn-secondary {
+    margin-top: 10px;
+    padding: 12px 28px;
+    background: #ccc;
+    color: #333;
+    font-size: 1.05rem;
+    letter-spacing: 0.9px;
+    border-radius: 11px;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 3px 8px #aaa5;
+    transition: background var(--trans-fast), box-shadow var(--trans-fast), transform var(--trans-fast);
+    align-self: center;
+  }
+  .btn-secondary:hover {
+    background: #bbb;
+    box-shadow: 0 7px 20px #bbb9;
+    transform: translateY(-2px) scale(1.05);
+  }
+  footer {
+    padding: 18px 4px 18px 4px;
+    text-align: center;
+    font-size: 1rem;
+    background: linear-gradient(90deg,#1565c0 0%,#1abc9c 100%);
+    color: white;
+    font-weight: 500;
+    box-shadow: 0 -2px 18px rgba(21,101,192,0.12);
+    flex-shrink: 0;
+  }
+  @media (max-width: 560px) {
+    .controls {
+      flex-direction: column;
+      gap: 14px;
+    }
+    input.input-box {
+      margin-right: 0;
+      width: 100%;
+      max-width: 100%;
+    }
+    .btn {
+      width: 100%;
+      font-size: 1.15rem;
+    }
+    .results-grid {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+</style>
+</head>
+<body>
+  <div id="app">
+    <header>
+      <h1 class="logo-title">ARKIN LABS</h1>
+      <div class="subtitle">Drone Pre-Flight Environmental Analysis System</div>
+    </header>
+    <main>
+      <!-- Step 1: Welcome Page -->
+      <section id="page-welcome" class="active" aria-label="Welcome page">
+        <p class="welcome-text">
+          Welcome to the Drone Pre-Flight Environmental Analysis System by ARKIN LABS.<br/>
+          Ensure your drone's flight safety by analyzing environmental conditions and no-fly zones at your location.
+        </p>
+        <button id="btnStart" aria-label="Start the app">Get Started</button>
+      </section>
+
+      <!-- Step 2: Data Page -->
+      <section id="page-data" aria-label="Data input page">
+        <div class="controls">
+          <input type="text" id="locationInput" class="input-box" placeholder="Enter a location (city, landmark, etc.)" aria-label="Location input" autocomplete="off" />
+          <button id="btnCheckLocation" class="btn" aria-label="Check the location">Check Location</button>
+        </div>
+        <div class="controls">
+          <button id="btnFetchHardware" class="btn" style="background: var(--brand-green); box-shadow: 0 3px 14px rgba(34,187,91,0.25);" aria-label="Get data from hardware">Get Data from Hardware</button>
+        </div>
+        <div id="map" tabindex="0" aria-label="Interactive Google map showing no-fly zones"></div>
+        <div id="dataMessage" style="margin-top: 20px; font-weight: 600; font-size: 1rem; color: var(--brand-blue); min-height: 28px;" aria-live="polite" aria-atomic="true"></div>
+      </section>
+
+      <!-- Step 3: Results Page -->
+      <section id="page-results" aria-label="Results page">
+        <div class="status-card good" id="resultStatus">
+          <span class="status-dot"></span>
+          <span id="resultStatusText">Good to Fly</span>
+        </div>
+        <div class="results-grid" aria-live="polite" aria-atomic="true" aria-relevant="additions" id="resultsGrid">
+          <!-- dynamic result cards -->
+        </div>
+        <button id="btnRestart" class="btn-secondary" aria-label="Restart analysis">Back to Start</button>
+      </section>
+    </main>
+    <footer>&copy; 2025 ARKIN LABS. All rights reserved.</footer>
+  </div>
+
+<script>
+  // App state refs
+  const pages = {
+    welcome: document.getElementById('page-welcome'),
+    data: document.getElementById('page-data'),
+    results: document.getElementById('page-results')
+  };
+  const btnStart = document.getElementById('btnStart');
+  const btnCheckLocation = document.getElementById('btnCheckLocation');
+  const btnFetchHardware = document.getElementById('btnFetchHardware');
+  const btnRestart = document.getElementById('btnRestart');
+  const locationInput = document.getElementById('locationInput');
+  const dataMessage = document.getElementById('dataMessage');
+  const resultStatus = document.getElementById('resultStatus');
+  const resultStatusText = document.getElementById('resultStatusText');
+  const resultsGrid = document.getElementById('resultsGrid');
+
+  let map, geocoder, marker=null;
+
+  const restrictedZones = [
+    { name:"No-Fly Zone A", paths:[
+      {lat:28.6139, lng:77.2089},
+      {lat:28.6139, lng:77.2189},
+      {lat:28.6239, lng:77.2189},
+      {lat:28.6239, lng:77.2089}]},
+    { name:"No-Fly Zone B", paths:[
+      {lat:28.5739, lng:77.1689},
+      {lat:28.5739, lng:77.1889},
+      {lat:28.5839, lng:77.1889},
+      {lat:28.5839, lng:77.1689}]}
+  ];
+
+  function showPage(pageKey) {
+    Object.values(pages).forEach(p=>p.classList.remove('active'));
+    pages[pageKey].classList.add('active');
+  }
+
+  function isPointInPolygon(point, poly) {
+    let x = point.lat, y = point.lng;
+    let inside = false;
+    for(let i=0, j=poly.length-1; i<poly.length; j=i++) {
+      let xi=poly[i].lat, yi=poly[i].lng, xj=poly[j].lat, yj=poly[j].lng;
+      let intersect = ((yi > y)!==(yj > y)) && (x < (xj-xi)*(y-yi)/(yj-yi+1e-12)+xi);
+      if(intersect) inside = !inside;
+    }
+    return inside;
+  }
+
+  function haversine(lat1,lng1,lat2,lng2) {
+    const R = 6371;
+    const dLat = (lat2-lat1)*Math.PI/180;
+    const dLng = (lng2-lng1)*Math.PI/180;
+    const a = Math.sin(dLat/2)*Math.sin(dLat/2) +
+              Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*
+              Math.sin(dLng/2)*Math.sin(dLng/2);
+    return R*2*Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  }
+
+  function checkLocationStatus(latLng) {
+    for(let zone of restrictedZones){
+      if(isPointInPolygon(latLng, zone.paths)){
+        return {status:false, zoneName: zone.name};
+      }
+    }
+    let minDist = Infinity;
+    for(let zone of restrictedZones){
+      for(let vertex of zone.paths){
+        const d = haversine(latLng.lat, latLng.lng, vertex.lat, vertex.lng);
+        if(d<minDist) minDist = d;
+      }
+    }
+    if(minDist < 0.8) {
+      return {status:false, zoneName:"Near Restricted Zone"};
+    }
+    return {status:true, zoneName:""};
+  }
+
+  function initMap() {
+    map = new google.maps.Map(document.getElementById("map"), {
+      center: {lat: 28.6139, lng: 77.2089},
+      zoom: 12,
+      mapTypeId: "roadmap",
+      styles: [
+        { featureType: "water", stylers: [{color: "#e1effe"}]},
+        { featureType: "landscape", stylers: [{color: "#f4fbff"}]},
+        { featureType: "poi", stylers: [{color: "#d6e2f5"}]},
+        { featureType: "road", elementType: "geometry", stylers: [{color: "#bbe5fd"}]}
+      ]
+    });
+    geocoder = new google.maps.Geocoder();
+
+    restrictedZones.forEach(zone => {
+      const polygon = new google.maps.Polygon({
+        paths: zone.paths,
+        strokeColor: "#ea4335",
+        strokeOpacity: 0.9,
+        strokeWeight: 2,
+        fillColor: "#ea4335",
+        fillOpacity: 0.23,
+        map: map,
+      });
+      polygon.addListener("mouseover", (e) => {
+        const info = new google.maps.InfoWindow({
+          content: `<strong>${zone.name}</strong>`,
+          position: e.latLng,
+        });
+        info.open(map);
+        polygon.addListener("mouseout", () => info.close());
+      });
+    });
+  }
+
+  function placeMarker(latLng){
+    if(marker) marker.setMap(null);
+    marker = new google.maps.Marker({
+      position: latLng,
+      map: map,
+      animation: google.maps.Animation.DROP,
+      icon: {
+        path: google.maps.SymbolPath.CIRCLE,
+        scale: 8,
+        fillColor: "#1565c0",
+        fillOpacity: 0.9,
+        strokeWeight: 2,
+        strokeColor: "#22bb5b"
+      }
+    });
+  }
+
+  function updateStatusCard(goodToFly, zoneName) {
+    if (goodToFly) {
+      resultStatus.classList.remove("bad");
+      resultStatus.classList.add("good");
+      resultStatusText.textContent = "Good to Fly";
+      if(zoneName) resultStatusText.textContent += ` (${zoneName})`;
+    } else {
+      resultStatus.classList.remove("good");
+      resultStatus.classList.add("bad");
+      resultStatusText.textContent = "Bad to Fly";
+      if(zoneName) resultStatusText.textContent += ` (${zoneName})`;
+    }
+  }
+
+  // Simulate hardware sensor data
+  function simulateHardwareData() {
+    return {
+      temperature: 25 + Math.round(Math.random() * 10), // 25-35 °C
+      humidity: 40 + Math.round(Math.random() * 40),    // 40-80 %
+      wind: Math.round(Math.random() * 30),             // 0-30 km/h
+      emi: ["Low", "Medium", "High"][Math.floor(Math.random()*3)],
+    };
+  }
+
+  function showResults(data, flyStatus, zoneName) {
+    resultsGrid.innerHTML = `
+      <div class="result-card"><div class="result-label">Temperature (°C)</div> ${data.temperature}</div>
+      <div class="result-card"><div class="result-label">Humidity (%)</div> ${data.humidity}</div>
+      <div class="result-card"><div class="result-label">Wind Speed (km/h)</div> ${data.wind}</div>
+      <div class="result-card"><div class="result-label">EMI Level</div> ${data.emi}</div>
+      <div class="result-card"><div class="result-label">No-Fly Zone Status</div> ${zoneName ? zoneName : "Safe"}</div>
+    `;
+    updateStatusCard(flyStatus, zoneName);
+  }
+
+  btnStart.addEventListener("click", () => {
+    showPage("data");
+  });
+
+  btnCheckLocation.addEventListener("click", () => {
+    const locationStr = locationInput.value.trim();
+    dataMessage.textContent = "";
+    if (!locationStr) {
+      dataMessage.style.color = "var(--brand-red)";
+      dataMessage.textContent = "Please enter a location.";
+      return;
+    }
+    geocoder.geocode({address: locationStr}, (results, status) => {
+      if (status === "OK" && results && results.length > 0) {
+        const loc = results[0].geometry.location;
+        map.panTo(loc);
+        map.setZoom(14);
+        placeMarker({lat: loc.lat(), lng: loc.lng()});
+        const check = checkLocationStatus({lat: loc.lat(), lng: loc.lng()});
+        showResults({}, check.status, check.zoneName);
+        dataMessage.textContent = `Location: ${results[0].formatted_address}`;
+        dataMessage.style.color = "var(--brand-blue)";
+      } else {
+        dataMessage.style.color = "var(--brand-red)";
+        dataMessage.textContent = "Location not found. Try again.";
+        if(marker) { marker.setMap(null); marker = null;}
+      }
+    });
+  });
+
+  btnFetchHardware.addEventListener("click", () => {
+    dataMessage.textContent = "Fetching data from hardware...";
+    dataMessage.style.color = "var(--brand-blue)";
+    btnFetchHardware.disabled = true;
+    setTimeout(() => {
+      const hwData = simulateHardwareData();
+      let flyStatus = true;
+      let zoneName = "";
+      if (hwData.wind > 20 || hwData.emi === "High") {
+        flyStatus = false;
+        zoneName = "Unsafe Environmental Conditions";
+      }
+      showResults(hwData, flyStatus, zoneName);
+      dataMessage.textContent = "Hardware data fetched successfully.";
+      btnFetchHardware.disabled = false;
+      showPage("results");
+    }, 1600);
+  });
+
+  btnRestart.addEventListener("click", () => {
+    locationInput.value = "";
+    dataMessage.textContent = "";
+    if(marker) { marker.setMap(null); marker = null; }
+    resultsGrid.innerHTML = "";
+    updateStatusCard(true,"");
+    showPage("welcome");
+  });
+
+  locationInput.addEventListener("keydown", e => {
+    if(e.key === "Enter"){
+      e.preventDefault();
+      btnCheckLocation.click();
+    }
+  });
+
+  showPage("welcome");
+
+  function loadGoogleMaps() {
+    if(window.google && google.maps) {
+      initMap();
+      return;
+    }
+    const s = document.createElement("script");
+    s.src = "https://maps.googleapis.com/maps/api/js?key=YOUR_ACTUAL_API_KEY&callback=initMap";
+    s.async = true;
+    s.defer = true;
+    document.body.appendChild(s);
+  }
+  loadGoogleMaps();
+</script>
+</body>
+</html>
