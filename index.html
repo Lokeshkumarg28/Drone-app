@@ -5,396 +5,74 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Drone Pre-Flight Environmental Analysis System</title>
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;900&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
 <style>
 :root {
   --brand-blue: #0077b6;
   --brand-green: #2a9d8f;
   --brand-red: #e63946;
+  --brand-yellow: #ffe066;
   --brand-white: #ffffff;
   --brand-bg: #f8f9fa;
   --brand-dark: #2c3e50;
   --brand-light: #e9ecef;
   --card-radius: 18px;
-  --shadow-subtle: 0 4px 12px rgba(0, 0, 0, 0.08);
-  --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.15);
-  --logo-font: 'Montserrat', Arial, sans-serif;
+  --shadow-lg: 0 10px 30px rgba(0,0,0,0.15);
   --main-font: 'Poppins', Arial, sans-serif;
-  --glow-green: 0 0 18px 6px rgba(42, 157, 143, 0.5);
-  --glow-red: 0 0 18px 6px rgba(230, 57, 70, 0.5);
-  --trans-fast: 0.2s cubic-bezier(.19,1,.22,1);
-  --trans-medium: 0.4s cubic-bezier(.19,1,.22,1);
 }
-body { margin:0; padding:0; font-family:var(--main-font); background:var(--brand-bg); color:var(--brand-dark); overflow-x:hidden; }
-#app { display: flex; flex-direction: column; min-height: 100vh; }
+body { margin:0; padding:0; font-family:var(--main-font); background:var(--brand-bg); color:var(--brand-dark);}
+#app { display: flex; flex-direction: column; min-height: 100vh;}
 header {
-  width: 100%;
-  background: linear-gradient(90deg, var(--brand-blue) 0%, #48cae4 100%);
-  padding: 24px 20px;
-  box-shadow: var(--shadow-lg);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  position: relative;
-  z-index: 10;
+  width: 100%; background: linear-gradient(90deg, var(--brand-blue) 0%, #48cae4 100%);
+  padding: 24px 20px; box-shadow: var(--shadow-lg);
+  display: flex; align-items: center; justify-content: space-between; position: relative; z-index: 10;
 }
 .header-left { display: flex; align-items: center; gap: 20px; }
-.logo-title {
-  font-family: var(--logo-font);
-  font-size: 2.8rem;
-  font-weight: 900;
-  letter-spacing: 2px;
-  color: #ffb703; /* Vibrant orange */
-  text-shadow: 1px 2px 8px rgba(0, 0, 0, 0.1), 0 1px 0 #fff;
-  margin: 0;
-}
-.subtitle {
-  font-size: 1.1rem;
-  font-weight: 500;
-  color: #caf0f8;
-  letter-spacing: 0.5px;
-}
-.header-right {
-  display: flex;
-  align-items: center;
-  gap: 15px;
-  margin-right: 20px;
-}
-.userbar {
-  background: var(--brand-white);
-  border-radius: 40px;
-  box-shadow: var(--shadow-subtle);
-  padding: 8px 16px 8px 10px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 0.95rem;
-  font-weight: 500;
-  color: var(--brand-blue);
-  transition: transform var(--trans-medium), box-shadow var(--trans-medium);
-}
-.userbar:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
-}
-.user-avatar {
-  height: 34px; width: 34px; border-radius: 50%;
-  background: linear-gradient(135deg, var(--brand-green) 40%, var(--brand-blue) 90%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.1);
-  color: #fff;
-  font-size: 1.1rem;
-  font-weight: bold;
-}
-.user-role {
-  font-size: 0.85rem;
-  font-weight: 400;
-  color: #6c757d;
-  display: none;
-}
-main {
-  flex-grow: 1;
-  width: 100%;
-  max-width: 960px;
-  margin: 0 auto;
-  padding: 32px 10px;
-  display: flex;
-  justify-content: center;
-  position: relative;
-  min-height: 520px;
-}
-section { 
-  width: 100%;
-  max-width: 760px;
-  background: var(--brand-white);
-  border-radius: var(--card-radius);
-  box-shadow: var(--shadow-lg);
-  padding: 40px 28px 38px;
-  display: none;
-  flex-direction: column;
-  align-items: center;
-  position: absolute;
-  left: 50%;
-  top: 50px;
-  transform: translateX(-50%) translateY(0);
-  opacity: 0;
-  transition: opacity var(--trans-medium) ease-out, transform var(--trans-medium) ease-out;
-  z-index: 1;
-  min-height: 520px;
-}
-section.active { display:flex; opacity:1; transform: translateX(-50%) translateY(0); }
-.login-card, .welcome-card {
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-  padding: 32px 40px;
-  background: var(--brand-light);
-  border-radius: 24px;
-  width: 100%; max-width: 360px; margin: 0 auto;
-  display: flex; flex-direction: column; align-items: center; gap: 20px;
-  animation: fadeInLogin 0.8s cubic-bezier(.42,0,.45,1.15);
-}
-@keyframes fadeInLogin { from{opacity:0;transform:scale(0.95) translateY(20px);} to{opacity:1;transform:scale(1) translateY(0);} }
-.login-card h2 { text-align: center; font-size: 1.35rem; font-weight: 600; color: var(--brand-blue); margin-bottom: 0; }
+.logo-title { font-family: var(--logo-font); font-size: 2.8rem; font-weight: 900; letter-spacing: 2px; color: #ffb703; text-shadow: 1px 2px 8px rgba(0, 0, 0, 0.1), 0 1px 0 #fff; margin: 0; }
+.subtitle { font-size: 1.1rem; font-weight: 500; color: #caf0f8; letter-spacing: 0.5px;}
+.header-right { display: flex; align-items: center; gap: 15px; margin-right: 20px;}
+.userbar { background: var(--brand-white); border-radius: 40px; box-shadow: var(--shadow-lg); padding: 8px 16px 8px 10px; display: flex; align-items: center; gap: 8px; font-size: 0.95rem; font-weight: 500; color: var(--brand-blue);}
+.user-avatar { height: 34px; width: 34px; border-radius: 50%; background: linear-gradient(135deg, var(--brand-green) 40%, var(--brand-blue) 90%); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 1.1rem; font-weight: bold;}
+.user-role { font-size: 0.85rem; font-weight: 400; color: #6c757d; display: none;}
+main { flex-grow:1; width:100%; max-width:960px; margin:0 auto; padding:32px 10px; display:flex; justify-content:center; position:relative; min-height:520px;}
+section { width:100%; max-width:760px; background: var(--brand-white); border-radius: var(--card-radius); box-shadow: var(--shadow-lg); padding:40px 28px 38px; display:none; flex-direction:column; align-items:center; position:absolute; left:50%; top:50px; transform: translateX(-50%) translateY(0); opacity:0; z-index:1; min-height:520px; transition: opacity 0.4s, transform 0.4s; }
+section.active { display:flex; opacity:1; transform: translateX(-50%) translateY(0);}
+.login-card, .welcome-card { box-shadow:0 8px 32px rgba(0,0,0,0.1); padding:32px 40px; background: var(--brand-light); border-radius:24px; width:100%; max-width:360px; margin:0 auto; display:flex; flex-direction:column; align-items:center; gap:20px;}
+.login-card h2 { text-align: center; font-size: 1.35rem; font-weight: 600; color: var(--brand-blue); margin-bottom: 0;}
 .login-card label { margin-bottom: 5px; color: var(--brand-blue); font-weight: 500; font-size: 0.95rem; margin-left: 10px; align-self: flex-start;}
-.login-card input {
-  width: 100%; padding: 14px 16px; border: 2px solid var(--brand-blue); border-radius: 12px;
-  font-size: 1rem; margin-bottom: 8px; font-family: var(--main-font); outline: none;
-  transition: border-color var(--trans-fast), box-shadow var(--trans-fast);
-}
+.login-card input { width:100%; padding:14px 16px; border:2px solid var(--brand-blue); border-radius:12px; font-size:1rem; margin-bottom:8px; font-family:var(--main-font); outline:none; transition: border-color 0.2s, box-shadow 0.2s;}
 .login-card input:focus { border-color: var(--brand-green); box-shadow: 0 0 10px rgba(42, 157, 143, 0.2); }
-.login-card .btn { width: 100%; margin-top: 12px; }
-.login-error { color: var(--brand-red); margin-bottom: 6px; font-size: 0.95rem; font-weight: 500;}
-.welcome-card {
-  padding: 40px 40px 34px;
-  background: linear-gradient(135deg, var(--brand-white) 0%, var(--brand-light) 100%);
-  animation: fadeInWelcome 0.8s cubic-bezier(.42,0,.45,1.15);
-  box-shadow: var(--shadow-lg);
-}
-@keyframes fadeInWelcome { from { opacity:0; transform: scale(0.95) translateY(20px);} to {opacity:1;transform: scale(1) translateY(0);} }
-.welcome-avatar {
-  height: 72px; width: 72px; border-radius: 50%;
-  background: linear-gradient(135deg, var(--brand-green) 46%, var(--brand-blue) 84%);
-  color: #fff; font-size: 2.2rem; font-weight: bold; line-height: 72px;
-  text-align: center; margin-bottom: 18px; box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
-}
-.welcome-greeting {
-  font-size: 1.8rem;
-  font-weight: 700;
-  margin-bottom: 8px;
-  color: var(--brand-blue);
-  letter-spacing: 0.2px;
-  text-align: center;
-}
-.welcome-message {
-  font-size: 1.1rem;
-  color: var(--brand-dark);
-  margin-bottom: 22px;
-  text-align: center;
-  font-weight: 400;
-}
+.login-card .btn { width:100%; margin-top:12px;}
+.login-error { color:var(--brand-red); margin-bottom:6px; font-size:0.95rem; font-weight:500;}
+.welcome-card {padding:40px 40px 34px; background: linear-gradient(135deg, var(--brand-white) 0%, var(--brand-light) 100%); box-shadow: var(--shadow-lg);}
+.welcome-avatar { height:72px; width:72px; border-radius:50%; background:linear-gradient(135deg, var(--brand-green) 46%, var(--brand-blue) 84%); color: #fff; font-size:2.2rem; font-weight:bold; line-height:72px; text-align:center; margin-bottom:18px; box-shadow:0 2px 20px rgba(0,0,0,0.1);}
+.welcome-greeting { font-size:1.8rem; font-weight:700; margin-bottom:8px; color: var(--brand-blue); letter-spacing:0.2px; text-align:center;}
+.welcome-message { font-size:1.1rem; color:var(--brand-dark); margin-bottom:22px; text-align:center; font-weight:400;}
 .btn {
   background: linear-gradient(90deg,var(--brand-blue) 0%, var(--brand-green) 100%);
-  color: white;
-  font-size: 1.1rem;
-  font-weight: 600;
-  padding: 15px 42px;
-  border: none;
-  border-radius: 12px;
-  cursor: pointer;
-  letter-spacing: 0.75px;
-  transition: box-shadow var(--trans-fast), transform var(--trans-fast), background 0.3s ease;
-  box-shadow: 0 4px 15px rgba(0, 119, 182, 0.2);
-  user-select: none;
-  margin-top: 8px;
+  color: white; font-size: 1.1rem; font-weight: 600; padding: 15px 42px; border: none; border-radius: 12px; cursor: pointer; box-shadow: 0 4px 15px rgba(0, 119, 182, 0.2); user-select: none; margin-top: 8px;
 }
-.btn:hover {
-  background: linear-gradient(90deg, #008cbb 0%, #29a394 100%);
-  box-shadow: 0 6px 20px rgba(0, 119, 182, 0.3);
-}
-.btn:active {
-  transform: translateY(1px);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-.controls { display:flex; flex-wrap:wrap; justify-content:center; align-items:flex-end; gap: 16px; margin-bottom: 24px; }
-input[type=text].input-box {
-  font-size: 1rem;
-  padding: 14px 16px;
-  border-radius: 12px;
-  border: 2px solid var(--brand-blue);
-  width: 320px;
-  max-width: 100%;
-  outline: none;
-  transition: border-color var(--trans-fast), box-shadow var(--trans-fast);
-}
-input[type=text].input-box:focus {
-  border-color: var(--brand-green);
-  box-shadow: 0 0 10px rgba(42, 157, 143, 0.2);
-}
-#hardwareFetchContainer {
-  flex-basis: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 12px;
-  margin-top: 10px;
-}
-#btnFetchHardware {
-  background: var(--brand-green);
-  box-shadow: 0 4px 15px rgba(42, 157, 143, 0.25);
-  transition: background var(--trans-fast), box-shadow var(--trans-fast), transform var(--trans-fast);
-}
-#btnFetchHardware:hover {
-  background: #23857a;
-  box-shadow: 0 6px 20px rgba(42, 157, 143, 0.35);
-}
-#btnFetchHardware:active {
-  background: #2a9d8f;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-#map {
-  width: 100%;
-  height: 300px;
-  border-radius: var(--card-radius);
-  box-shadow: var(--shadow-subtle);
-  border: 2px solid var(--brand-light);
-  transition: transform var(--trans-medium), box-shadow var(--trans-medium);
-}
-#map:focus {
-  outline: 4px solid var(--brand-green);
-  outline-offset: 4px;
-}
-.result-label { font-weight: 500; margin-bottom: 4px; color: var(--brand-blue); font-size: 0.95rem; }
-.status-card {
-  display: flex; align-items: center; justify-content: center; max-width: 460px; width: 100%; margin: 0 auto 24px;
-  padding: 24px 28px; box-sizing: border-box; gap: 12px; text-align: center;
-  font-size: 1.4rem; font-weight: 700; letter-spacing: 1.5px; position: relative;
-  border-radius: var(--card-radius);
-  transition: all var(--trans-fast);
-}
-.status-card span { white-space: nowrap; }
-.status-card.good {
-  background: linear-gradient(135deg, #eaf9e6 0%, #d4f4e2 100%);
-  box-shadow: var(--shadow-subtle), var(--glow-green);
-  color: var(--brand-green);
-}
-.status-card.bad {
-  background: linear-gradient(135deg, #ffecec 0%, #fcdede 100%);
-  box-shadow: var(--shadow-subtle), var(--glow-red);
-  color: var(--brand-red);
-}
-.status-dot {
-  height: 22px; width: 22px; border-radius: 50%;
-  background: var(--brand-green);
-  box-shadow: 0 0 8px 2px var(--brand-green);
-  animation: pulseDotG 1.3s infinite;
-}
-.status-card.bad .status-dot {
-  background: var(--brand-red);
-  box-shadow: 0 0 10px 3px var(--brand-red);
-  animation: pulseDotR 1.3s infinite;
-}
-@keyframes pulseDotG { 0%{box-shadow:0 0 8px 2px var(--brand-green);} 70%{box-shadow:0 0 16px 6px var(--brand-green);} 100%{box-shadow:0 0 8px 2px var(--brand-green);} }
-@keyframes pulseDotR { 0%{box-shadow:0 0 8px 2px var(--brand-red);} 70%{box-shadow:0 0 18px 7px var(--brand-red);} 100%{box-shadow:0 0 8px 2px var(--brand-red);} }
-.results-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 18px;
-  font-weight: 600;
-  justify-items: center;
-  width: 100%;
-}
-.result-card {
-  background: var(--brand-light);
-  border-radius: 14px;
-  box-shadow: var(--shadow-subtle);
-  padding: 20px 10px;
-  text-align: center;
-  color: var(--brand-dark);
-  font-size: 1.1rem;
-  user-select: none;
-  min-width: 140px;
-  transition: transform var(--trans-fast), box-shadow var(--trans-fast);
-}
-.result-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
-}
-.card-title {
-  font-size: 0.9rem;
-  font-weight: 500;
-  color: var(--brand-blue);
-  margin-bottom: 5px;
-}
-.card-value {
-  font-size: 1.8rem;
-  font-weight: 700;
-  color: var(--brand-dark);
-  letter-spacing: -0.5px;
-}
-.btn-secondary {
-  margin-top: 24px;
-  padding: 14px 32px;
-  background: var(--brand-light);
-  color: var(--brand-dark);
-  font-size: 1.05rem;
-  letter-spacing: 0.9px;
-  border-radius: 12px;
-  border: 1px solid #ced4da;
-  cursor: pointer;
-  box-shadow: var(--shadow-subtle);
-  transition: background var(--trans-fast), box-shadow var(--trans-fast), transform var(--trans-fast);
-  align-self: center;
-  font-weight: 500;
-}
-.btn-secondary:hover {
-  background: #e9ecef;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.1);
-  transform: translateY(-2px);
-}
-.btn-secondary:active {
-  transform: translateY(0);
-  box-shadow: var(--shadow-subtle);
-}
-.loading-spinner {
-  border: 4px solid #f3f3f3;
-  border-top: 4px solid var(--brand-green);
-  border-radius: 50%;
-  width: 28px;
-  height: 28px;
-  animation: spin 1s linear infinite;
-  margin: 0;
-  align-self: center;
-}
-@keyframes spin { 0% { transform: rotate(0deg);} 100% { transform: rotate(360deg);} }
-footer {
-  padding: 18px 20px;
-  text-align: center;
-  font-size: 0.9rem;
-  background: var(--brand-dark);
-  color: var(--brand-white);
-  font-weight: 300;
-  flex-shrink: 0;
-}
-@media (max-width: 768px) {
-  .header-left { flex-direction: column; align-items: flex-start; gap: 5px; }
-  .subtitle { margin-top: 0; }
-  header { flex-direction: column; align-items: flex-start; gap: 10px; padding: 15px 20px; }
-  .header-right { margin-right: 0; margin-top: 10px; width: 100%; justify-content: flex-start; }
-}
-@media (max-width: 560px) {
-  main { padding: 8px; }
-  section { padding: 18px 7px 22px; }
-  .welcome-card { margin-top: 20px; padding: 22px 5vw; }
-  .controls { flex-direction: column; gap: 14px; }
-  input.input-box { width: 100%; }
-  .btn { width: 100%; }
-  .results-grid { 
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 14px;
-  }
-  .result-card {
-    min-width: unset;
-    flex-basis: 45%;
-    max-width: 48%;
-  }
-  .no-fly-zone-card {
-    flex-basis: 100%;
-    margin-bottom: 12px;
-  }
-  .logo-title { font-size: 2.2rem; letter-spacing: 1.5px; }
-  .subtitle { font-size: 0.9rem; }
-}
+.btn:active { transform: translateY(1px); }
+.controls { display:flex; flex-wrap:wrap; justify-content:center; align-items:flex-end; gap: 16px; margin-bottom: 24px;}
+input[type=text].input-box { font-size: 1rem; padding: 14px 16px; border-radius: 12px; border: 2px solid var(--brand-blue); width: 320px; max-width: 100%; outline: none;}
+input[type=text].input-box:focus { border-color: var(--brand-green); box-shadow:0 0 10px rgba(42, 157, 143, 0.2);}
+#map { width:100%; min-height: 220px; height:300px; border-radius:var(--card-radius); box-shadow: var(--shadow-lg); margin-bottom:16px;}
+@media (max-width:600px) {.logo-title{font-size:1.4rem;} .subtitle{font-size:0.92rem;}}
+/* Gauges section */
+.hardware-gauges {display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:20px;width:100%;margin:18px auto;}
+.gauge-card {background:var(--brand-light);border-radius:16px;box-shadow:var(--shadow-lg);padding:16px 8px 18px;display:flex;flex-direction:column;align-items:center;}
+.gauge-title {font-weight:700;font-size:1.13rem;margin-bottom:10px;color:var(--brand-dark);}
+.gauge-value {font-size:1.5rem;margin-top:10px;font-weight:700;}
+footer { padding: 18px 20px; text-align: center; font-size: 0.9rem; background: var(--brand-dark); color: var(--brand-white);}
 </style>
 </head>
 <body>
-  <div id="app">
-    <header>
-      <div class="header-left">
-        <span class="logo-title">ARKIN LABS</span>
-        <span class="subtitle">Drone Pre-Flight Environmental Analysis System</span>
-      </div>
+ <div id="app">
+   <header>
+     <div class="header-left">
+       <span class="logo-title">ARKIN LABS</span>
+       <span class="subtitle">Drone Pre-Flight Environmental Analysis System</span>
+     </div>
       <div class="header-right" id="userHeader" style="display:none;">
         <div class="userbar" id="userbar">
           <div class="user-avatar" id="userAvatar"></div>
@@ -402,57 +80,57 @@ footer {
           <span class="user-role" id="userRoleDisp"></span>
         </div>
       </div>
-    </header>
-    <main>
-      <section id="page-login" class="active">
-        <form id="loginForm" class="login-card" autocomplete="off">
-          <h2>User Login</h2>
-          <div class="login-error" id="loginError"></div>
-          <label for="username">Username</label>
-          <input id="username" name="username" type="text" required maxlength="32" placeholder="e.g. lokesh" autofocus />
-          <label for="password">Password</label>
-          <input id="password" name="password" type="password" required maxlength="32" placeholder="Password" />
-          <button type="submit" class="btn">Login</button>
-        </form>
-      </section>
-      <section id="page-welcome">
-        <div class="welcome-card">
-          <div class="welcome-avatar" id="welcomeAvatar"></div>
-          <div class="welcome-main">
-            <div class="welcome-greeting">Welcome, <span id="userWelcome"></span>!</div>
-            <div class="welcome-message">
-              Ready to analyze your environment for a safe drone flight? <br>
-              Follow the steps below to begin.
-            </div>
-            <button id="btnStart" class="btn" aria-label="Start the app">
-              <span style="margin-right:6px;">🛫</span>Continue
-            </button>
-          </div>
-        </div>
-      </section>
-      <section id="page-data">
-        <div class="controls">
-          <input type="text" id="locationInput" class="input-box" placeholder="Enter a location (city, landmark, etc.)" aria-label="Location input" autocomplete="off" />
-          <button id="btnCheckLocation" class="btn" aria-label="Check the location">Check Location</button>
-        </div>
-        <div class="controls" id="hardwareFetchContainer">
-          <button id="btnFetchHardware" class="btn" aria-label="Get data from hardware">Get Data from Hardware</button>
-        </div>
-        <div id="map" tabindex="0" aria-label="Interactive Google map showing no-fly zones"></div>
-        <div id="dataMessage" style="margin-top: 20px; font-weight: 500; font-size: 1rem; color: var(--brand-blue); min-height: 28px;" aria-live="polite" aria-atomic="true"></div>
-      </section>
-      <section id="page-results">
-        <div class="status-card good" id="resultStatus">
-          <span class="status-dot"></span>
-          <span id="resultStatusText">Good to Fly</span>
-        </div>
-        <div id="resultsContent">
-          </div>
-        <button id="btnRestart" class="btn-secondary" aria-label="Restart analysis">Back to Start</button>
-      </section>
-    </main>
-    <footer>&copy; 2025 ARKIN LABS. All rights reserved.</footer>
-  </div>
+   </header>
+   <main>
+     <section id="page-login" class="active">
+       <form id="loginForm" class="login-card" autocomplete="off">
+         <h2>User Login</h2>
+         <div class="login-error" id="loginError"></div>
+         <label for="username">Username</label>
+         <input id="username" name="username" type="text" required maxlength="32" placeholder="e.g. lokesh" autofocus />
+         <label for="password">Password</label>
+         <input id="password" name="password" type="password" required maxlength="32" placeholder="Password" />
+         <button type="submit" class="btn">Login</button>
+       </form>
+     </section>
+     <section id="page-welcome">
+       <div class="welcome-card">
+         <div class="welcome-avatar" id="welcomeAvatar"></div>
+         <div class="welcome-main">
+           <div class="welcome-greeting">Welcome, <span id="userWelcome"></span>!</div>
+           <div class="welcome-message">
+             Ready to analyze your environment for a safe drone flight? <br>
+             Follow the steps below to begin.
+           </div>
+           <button id="btnStart" class="btn" aria-label="Start the app">
+             <span style="margin-right:6px;">🛫</span>Continue
+           </button>
+         </div>
+       </div>
+     </section>
+     <section id="page-data">
+       <div class="controls">
+         <input type="text" id="locationInput" class="input-box" placeholder="Enter a location (city, landmark, etc.)" autocomplete="off" />
+         <button id="btnCheckLocation" class="btn" aria-label="Check the location">Check Location</button>
+       </div>
+       <div id="map"></div>
+       <div id="dataMessage" style="margin-top: 12px; font-weight: 500; font-size: 1rem; color: var(--brand-blue); min-height: 28px;" aria-live="polite" aria-atomic="true"></div>
+       <div class="controls" id="hardwareFetchContainer">
+         <button id="btnFetchHardware" class="btn" aria-label="Get data from hardware">Get Data from Hardware</button>
+       </div>
+     </section>
+     <section id="page-results">
+       <div class="status-card good" id="resultStatus">
+         <span class="status-dot"></span>
+         <span id="resultStatusText">Good to Fly</span>
+       </div>
+       <div class="hardware-gauges" id="hardwareGauges"></div>
+       <button id="btnRestart" class="btn-secondary" aria-label="Restart analysis">Back to Start</button>
+     </section>
+   </main>
+   <footer>&copy; 2025 ARKIN LABS. All rights reserved.</footer>
+ </div>
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 <script>
 const pages = {
   login: document.getElementById('page-login'),
@@ -475,26 +153,100 @@ const locationInput = document.getElementById('locationInput');
 const dataMessage = document.getElementById('dataMessage');
 const resultStatus = document.getElementById('resultStatus');
 const resultStatusText = document.getElementById('resultStatusText');
-const resultsContent = document.getElementById('resultsContent');
+const hardwareGauges = document.getElementById('hardwareGauges');
 const loginForm = document.getElementById('loginForm');
 const loginError = document.getElementById('loginError');
-const hardwareFetchContainer = document.getElementById('hardwareFetchContainer');
 let userData = null;
-let map, geocoder, marker=null;
-const restrictedZones = [
-  { name:"No-Fly Zone A", paths:[
-    {lat:28.6139, lng:77.2089},
-    {lat:28.6139, lng:77.2189},
-    {lat:28.6239, lng:77.2189},
-    {lat:28.6239, lng:77.2089}]},
-  { name:"No-Fly Zone B", paths:[
-    {lat:28.5739, lng:77.1689},
-    {lat:28.5739, lng:77.1889},
-    {lat:28.5839, lng:77.1889},
-    {lat:28.5839, lng:77.1689}]}
-];
+
+// OSM & Marker Setup
+let map, osmMarker;
+function setupMap() {
+  map = L.map('map').setView([28.6139, 77.209], 12);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '&copy; OpenStreetMap'
+  }).addTo(map);
+}
+
+function searchAndShowLocation(qstr) {
+  if(!qstr.trim()) return;
+  fetch('https://nominatim.openstreetmap.org/search?format=json&q='+encodeURIComponent(qstr))
+    .then(r=>r.json())
+    .then(arr=>{
+      if(arr.length) {
+        const lat = +arr[0].lat, lon = +arr[0].lon;
+        map.setView([lat,lon], 15, {animate:true});
+        if(osmMarker) map.removeLayer(osmMarker);
+        osmMarker = L.marker([lat, lon]).addTo(map).bindPopup(arr[0].display_name).openPopup();
+        dataMessage.style.color = "var(--brand-blue)";
+        dataMessage.textContent = "Found: " + arr[0].display_name;
+      } else {
+        dataMessage.style.color = "var(--brand-red)";
+        dataMessage.textContent = "Location not found.";
+      }
+    });
+}
+// Gauges (SVG, animated)
+function gaugeSVG({label,value,min,max,unit}) {
+  value = Math.max(min, Math.min(max, value));
+  const percent = (value-min)/(max-min);
+  const angle = -90 + 180*percent;
+  const bands = [
+    {start:-90,end:-30,color:'#e63946'},
+    {start:-30,end:30,color:'#ffe066'},
+    {start:30,end:90,color:'#2a9d8f'}
+  ];
+  function arc(start,end,color){
+    const r=62, xc=75, yc=84;
+    const rad = d => Math.PI/180*d;
+    const x1 = xc + r * Math.cos(rad(start));
+    const y1 = yc + r * Math.sin(rad(start));
+    const x2 = xc + r * Math.cos(rad(end));
+    const y2 = yc + r * Math.sin(rad(end));
+    const largeArc = end-start>180?1:0;
+    return `<path d="M${x1},${y1} A${r},${r} 0 ${largeArc} 1 ${x2},${y2}" stroke="${color}" stroke-width="14" fill="none"/>`;
+  }
+  const r=62, xc=75, yc=84, needleLen=54, aRad = Math.PI/180*angle;
+  const nx = xc + needleLen * Math.cos(aRad);
+  const ny = yc + needleLen * Math.sin(aRad);
+  return `
+    <svg width="150" height="95" viewBox="0 0 150 100" style="margin-bottom:-8px;">
+      ${bands.map(b=>arc(b.start,b.end,b.color)).join("")}
+      <circle cx="${xc}" cy="${yc}" r="8" fill="#222"/>
+      <line x1="${xc}" y1="${yc}" x2="${nx}" y2="${ny}" stroke="#222" stroke-width="5" stroke-linecap="round"/>
+    </svg>
+    <div class="gauge-value">${value} ${unit||''}</div>
+  `;
+}
+function emiValue(val) {
+  if(val==="Low")return 20;if(val==="Medium")return 55;if(val==="High")return 89;return 0;
+}
+function continuousSensorData() {
+  return {
+    temperature: Math.round(25 + Math.random()*8 + 5*Math.sin(Date.now()/8500)),
+    humidity: Math.round(48 + Math.random()*44 + 17*Math.cos(Date.now()/10600)),
+    wind: Math.round(8 + 18*Math.abs(Math.sin(Date.now()/4100))),
+    emi: ["Low","Medium","High"][Math.floor(3*Math.abs(Math.sin(Date.now()/5700)))]
+  };
+}
+function renderLiveGauges(hw) {
+  hardwareGauges.innerHTML = `
+    <div class="gauge-card"><div class="gauge-title">Temperature</div>${gaugeSVG({label:"Temperature",value:hw.temperature,min:10,max:45,unit:"°C"})}</div>
+    <div class="gauge-card"><div class="gauge-title">Humidity</div>${gaugeSVG({label:"Humidity",value:hw.humidity,min:20,max:100,unit:"%"})}</div>
+    <div class="gauge-card"><div class="gauge-title">Wind Speed</div>${gaugeSVG({label:"Wind",value:hw.wind,min:0,max:30,unit:"km/h"})}</div>
+    <div class="gauge-card"><div class="gauge-title">EMI Level</div>${gaugeSVG({label:"EMI",value:emiValue(hw.emi),min:0,max:100,unit:""})}
+      <div style="margin-top:3px;color:#444;font-size:1.03rem">${hw.emi}</div></div>
+  `;
+}
+let gaugeInterval = null;
+function startHardwareFeed() {
+  if(gaugeInterval) clearInterval(gaugeInterval);
+  gaugeInterval = setInterval(()=>renderLiveGauges(continuousSensorData()), 1000);
+}
+
+// Login and navigation
 function showPage(key) {
-  for(const pg of Object.values(pages)) pg.classList.remove('active');
+  Object.values(pages).forEach(p=>p.classList.remove('active'));
   pages[key].classList.add('active');
 }
 loginForm.addEventListener('submit', (e) => {
@@ -505,7 +257,7 @@ loginForm.addEventListener('submit', (e) => {
     loginError.textContent = "Please enter both username and password.";
     return;
   }
-  if ((username === "user1" || username === "admin" || username === "user2" || username === "user1") && password === "drone") {
+  if ((username === "user1" || username === "user2" || username === "admin") && password === "drone") {
     userData = {
       username,
       role: username === "admin" ? "Administrator" : "Operator",
@@ -523,7 +275,7 @@ loginForm.addEventListener('submit', (e) => {
     loginError.textContent = "Invalid credentials. Try username 'user1', 'user2', or 'admin' and password 'drone'.";
   }
 });
-btnStart.addEventListener("click", ()=> { showPage("data"); });
+btnStart.addEventListener("click", ()=> { showPage("data"); setupMap(); });
 btnCheckLocation.addEventListener("click", () => {
   const locationStr = locationInput.value.trim();
   dataMessage.textContent = "";
@@ -532,48 +284,19 @@ btnCheckLocation.addEventListener("click", () => {
     dataMessage.textContent = "Please enter a location.";
     return;
   }
-  geocoder.geocode({address: locationStr}, (results, status) => {
-    if (status === "OK" && results && results.length > 0) {
-      const loc = results[0].geometry.location;
-      map.panTo(loc);
-      map.setZoom(14);
-      placeMarker({lat: loc.lat(), lng: loc.lng()});
-      const check = checkLocationStatus({lat: loc.lat(), lng: loc.lng()});
-      showResults({}, check.status, check.zoneName);
-      dataMessage.textContent = `Location: ${results[0].formatted_address}`;
-      dataMessage.style.color = "var(--brand-blue)";
-    } else {
-      dataMessage.style.color = "var(--brand-red)";
-      dataMessage.textContent = "Location not found. Try again.";
-      if(marker) { marker.setMap(null); marker = null;}
-    }
-  });
+  searchAndShowLocation(locationStr);
 });
 btnFetchHardware.addEventListener("click", () => {
-  dataMessage.textContent = "";
-  hardwareFetchContainer.insertAdjacentHTML('beforeend', '<div class="loading-spinner"></div>');
-  btnFetchHardware.disabled = true;
-  setTimeout(() => {
-    const hwData = simulateHardwareData();
-    let flyStatus = true;
-    let zoneName = "";
-    if (hwData.wind > 20 || hwData.emi === "High") {
-      flyStatus = false;
-      zoneName = "Unsafe Environmental Conditions";
-    }
-    showResults(hwData, flyStatus, zoneName);
-    dataMessage.textContent = "Hardware data fetched successfully.";
-    btnFetchHardware.disabled = false;
-    document.querySelector('.loading-spinner').remove();
-    showPage("results");
-  }, 1800);
+  showPage("results");
+  startHardwareFeed();
 });
 btnRestart.addEventListener("click", () => {
   locationInput.value = "";
   dataMessage.textContent = "";
-  if(marker) { marker.setMap(null); marker = null; }
-  resultsContent.innerHTML = "";
-  updateStatusCard(true,"");
+  if(osmMarker) map.removeLayer(osmMarker);
+  hardwareGauges.innerHTML = "";
+  resultStatus.classList.remove("bad"); resultStatus.classList.add("good");
+  resultStatusText.textContent = "Good to Fly";
   showPage("welcome");
 });
 locationInput.addEventListener("keydown", e => {
@@ -581,151 +304,6 @@ locationInput.addEventListener("keydown", e => {
     e.preventDefault(); btnCheckLocation.click();
   }
 });
-function isPointInPolygon(point, poly) {
-  let x = point.lat, y = point.lng, inside = false;
-  for(let i=0, j=poly.length-1; i<poly.length; j=i++) {
-    let xi=poly[i].lat, yi=poly[i].lng, xj=poly[j].lat, yj=poly[j].lng;
-    let intersect = ((yi > y)!==(yj > y)) && (x < (xj-xi)*(y-yi)/(yj-yi+1e-12)+xi);
-    if(intersect) inside = !inside;
-  }
-  return inside;
-}
-function haversine(lat1,lng1,lat2,lng2) {
-  const R = 6371, dLat = (lat2-lat1)*Math.PI/180, dLng = (lng2-lng1)*Math.PI/180;
-  const a = Math.sin(dLat/2)*Math.sin(dLat/2) +
-            Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)*Math.sin(dLng/2);
-  return R*2*Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-}
-function checkLocationStatus(latLng) {
-  for(let zone of restrictedZones){
-    if(isPointInPolygon(latLng, zone.paths)){
-      return {status:false, zoneName: zone.name};
-    }
-  }
-  let minDist = Infinity;
-  for(let zone of restrictedZones){
-    for(let vertex of zone.paths){
-      const d = haversine(latLng.lat, latLng.lng, vertex.lat, vertex.lng);
-      if(d<minDist) minDist = d;
-    }
-  }
-  if(minDist < 0.8) {
-    return {status:false, zoneName:"Near Restricted Zone"};
-  }
-  return {status:true, zoneName:""};
-}
-function initMap() {
-  map = new google.maps.Map(document.getElementById("map"), {
-    center: {lat: 28.6139, lng: 77.2089},
-    zoom: 12,
-    mapTypeId: "roadmap",
-    styles: [
-      { featureType: "water", stylers: [{color: "#e1effe"}]},
-      { featureType: "landscape", stylers: [{color: "#f4fbff"}]},
-      { featureType: "poi", stylers: [{color: "#d6e2f5"}]},
-      { featureType: "road", elementType: "geometry", stylers: [{color: "#bbe5fd"}]}
-    ]
-  });
-  geocoder = new google.maps.Geocoder();
-  restrictedZones.forEach(zone => {
-    const polygon = new google.maps.Polygon({
-      paths: zone.paths,
-      strokeColor: "#ea4335",
-      strokeOpacity: 0.9,
-      strokeWeight: 2,
-      fillColor: "#ea4335",
-      fillOpacity: 0.23,
-      map: map,
-    });
-    polygon.addListener("mouseover", (e) => {
-      const info = new google.maps.InfoWindow({
-        content: `<strong>${zone.name}</strong>`,
-        position: e.latLng,
-      });
-      info.open(map);
-      polygon.addListener("mouseout", () => info.close());
-    });
-  });
-}
-function placeMarker(latLng){
-  if(marker) marker.setMap(null);
-  marker = new google.maps.Marker({
-    position: latLng,
-    map: map,
-    animation: google.maps.Animation.DROP,
-    icon: {
-      path: google.maps.SymbolPath.CIRCLE,
-      scale: 8,
-      fillColor: "#0077b6",
-      fillOpacity: 0.9,
-      strokeWeight: 2,
-      strokeColor: "#2a9d8f"
-    }
-  });
-}
-function updateStatusCard(goodToFly, zoneName) {
-  if (goodToFly) {
-    resultStatus.classList.remove("bad");
-    resultStatus.classList.add("good");
-    resultStatusText.textContent = "Good to Fly";
-    if(zoneName) resultStatusText.textContent += ` (${zoneName})`;
-  } else {
-    resultStatus.classList.remove("good");
-    resultStatus.classList.add("bad");
-    resultStatusText.textContent = "Bad to Fly";
-    if(zoneName) resultStatusText.textContent += ` (${zoneName})`;
-  }
-}
-function simulateHardwareData() {
-  return {
-    temperature: 25 + Math.round(Math.random() * 10),
-    humidity: 40 + Math.round(Math.random() * 40),
-    wind: Math.round(Math.random() * 30),
-    emi: ["Low", "Medium", "High"][Math.floor(Math.random()*3)],
-  };
-}
-function showResults(data, flyStatus, zoneName) {
-  const isNoFlyZone = !!zoneName; // Check if zoneName is not empty or null
-  const noFlyCardHTML = isNoFlyZone ? `
-    <div class="result-card no-fly-zone-card">
-        <div class="card-title">No-Fly Zone Status</div>
-        <div class="card-value">${zoneName}</div>
-    </div>
-  ` : '';
-  
-  resultsContent.innerHTML = `
-    ${noFlyCardHTML}
-    <div class="results-grid">
-      <div class="result-card">
-        <div class="card-title">Temperature (°C)</div>
-        <div class="card-value">${data.temperature || "N/A"}</div>
-      </div>
-      <div class="result-card">
-        <div class="card-title">Humidity (%)</div>
-        <div class="card-value">${data.humidity || "N/A"}</div>
-      </div>
-      <div class="result-card">
-        <div class="card-title">Wind Speed (km/h)</div>
-        <div class="card-value">${data.wind || "N/A"}</div>
-      </div>
-      <div class="result-card">
-        <div class="card-title">EMI Level</div>
-        <div class="card-value">${data.emi || "N/A"}</div>
-      </div>
-    </div>
-  `;
-  updateStatusCard(flyStatus, zoneName);
-}
-showPage("login");
-function loadGoogleMaps() {
-  if(window.google && google.maps) { initMap(); return;}
-  const s = document.createElement("script");
-  s.src = "https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY_HERE&callback=initMap";
-  s.async = true;
-  s.defer = true;
-  document.body.appendChild(s);
-}
-loadGoogleMaps();
 </script>
 </body>
 </html>
